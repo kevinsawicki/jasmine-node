@@ -27,8 +27,6 @@ class FailureTree
       parentSuite.specs[spec.id].failures.push(item)
 
   forEachSpec: ({spec, suites, specs, failures}={}, callback, depth=0) ->
-    return unless spec?
-
     if failures?
       callback(spec, failure, depth) for failure in failures
     else
