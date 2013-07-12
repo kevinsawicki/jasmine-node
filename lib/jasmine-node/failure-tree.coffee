@@ -10,8 +10,7 @@ class FailureTree
   isEmpty: -> @suites.length is 0
 
   add: (spec) ->
-    result = spec.results()
-    for item in result.items_ when item.passed_ is false
+    for item in spec.results().items_ when item.passed_ is false
       failurePath = []
       parent = spec.suite
       while parent
