@@ -28,6 +28,7 @@ class FailureTree
 
   forEachSpec: ({spec, suites, specs, failures}={}, callback, depth=0) ->
     if failures?
+      callback(spec, null, depth)
       callback(spec, failure, depth) for failure in failures
     else
       callback(spec, null, depth)
