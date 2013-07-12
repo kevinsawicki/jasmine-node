@@ -45,9 +45,7 @@ class FailureTree
       [firstLine] = stackTraceLines
       if match = /^\s*at\s+null\.<anonymous>\s+\((.*):(\d+):(\d+)\)\s*$/.exec(firstLine)
         stackTraceLines.shift()
-        filePath = match[1]
-        relativePath = path.relative(process.cwd(), filePath)
-        filePath = relativePath if relativePath[0] isnt '.'
+        filePath = path.relative(process.cwd(), match[1])
         line = match[2]
         column = match[3]
         failure.messageLine = "#{filePath}:#{line}:#{column}"
