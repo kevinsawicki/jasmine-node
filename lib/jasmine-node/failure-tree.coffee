@@ -1,13 +1,15 @@
 path = require 'path'
 
 _ = require 'underscore'
+coffeestack = require 'coffeestack'
+
+sourceMaps = {}
 
 module.exports =
 class FailureTree
-  filterStack: null
   suites: null
 
-  constructor: (@filterStack) ->
+  constructor: ->
     @suites = []
 
   isEmpty: -> @suites.length is 0
@@ -29,27 +31,63 @@ class FailureTree
       parentSuite.specs[spec.id].failures.push(item)
       @filterStackTrace(item)
 
-  filterStackTrace: (failure) ->
-    stackTrace = @filterStack(failure.trace.stack)
-    return unless stackTrace
+  filterJasmineLines: (stackTraceLines) ->
+    jasmineFilename = require.resolve('./jasmine-1.3.1')
+    index = 0
+    while index < stackTraceLines.length
+      if stackTraceLines[index].indexOf(jasmineFilename) isnt -1
+        stackTraceLines.splice(index, 1)
+      else
+        index++
 
+  filterTrailingTimersLine: (stackTraceLines) ->
+    if (/^(\s*at .* )\(timers\.js:\d+:\d+\)/.test(_.last(stackTraceLines)))
+      stackTraceLines.pop()
+
+  filterSetupLines: (stackTraceLines) ->
+    # Ignore all lines starting at the first call to Object.jasmine.executeSpecsInFolder()
+    removeLine = false
+    index = 0
+    while index < stackTraceLines.length
+      removeLine or= /^\s*at Object\.jasmine\.executeSpecsInFolder/.test(stackTraceLines[index])
+      if removeLine
+        stackTraceLines.splice(index, 1)
+      else
+        index++
+
+  filterFailureMessageLine: (failure, stackTraceLines) ->
     # Remove first line if it matches the failure message
-    stackTraceLines = stackTrace.split('\n')
     [firstLine] = stackTraceLines
     {message} = failure
     if firstLine is message or firstLine is "Error: #{message}"
       stackTraceLines.shift()
 
-    # Remove remaining line if it is from an anonymous function
-    if stackTraceLines.length is 1
-      [firstLine] = stackTraceLines
-      if match = /^\s*at\s+null\.<anonymous>\s+\((.*):(\d+):(\d+)\)\s*$/.exec(firstLine)
-        stackTraceLines.shift()
-        filePath = path.relative(process.cwd(), match[1])
-        line = match[2]
-        column = match[3]
-        failure.messageLine = "#{filePath}:#{line}:#{column}"
+  filterOriginLine: (failure, stackTraceLines) ->
+    return stackTraceLines unless stackTraceLines.length is 1
 
+    # Remove remaining line if it is from an anonymous function
+    if match = /^\s*at\s+null\.<anonymous>\s+\((.*):(\d+):(\d+)\)\s*$/.exec(stackTraceLines[0])
+      stackTraceLines.shift()
+      filePath = path.relative(process.cwd(), match[1])
+      line = match[2]
+      column = match[3]
+      failure.messageLine = "#{filePath}:#{line}:#{column}"
+
+  filterStackTrace: (failure) ->
+    stackTrace = failure.trace.stack
+    return unless stackTrace
+
+    jasmineFilename = require.resolve('./jasmine-1.3.1')
+    stackTraceLines = stackTrace.split('\n')
+    @filterJasmineLines(stackTraceLines)
+    @filterTrailingTimersLine(stackTraceLines)
+    @filterSetupLines(stackTraceLines)
+    stackTrace = coffeestack.convertStackTrace(stackTraceLines.join('\n'), sourceMaps)
+    return unless stackTrace
+
+    stackTraceLines = stackTrace.split('\n')
+    @filterFailureMessageLine(failure, stackTraceLines)
+    @filterOriginLine(failure, stackTraceLines)
     failure.filteredStackTrace = stackTraceLines.join('\n')
 
   forEachSpec: ({spec, suites, specs, failures}={}, callback, depth=0) ->
