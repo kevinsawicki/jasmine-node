@@ -1,10 +1,13 @@
+path = require 'path'
+
 _ = require 'underscore'
 
 module.exports =
 class FailureTree
+  filterStack: null
   suites: null
 
-  constructor: ->
+  constructor: (@filterStack) ->
     @suites = []
 
   isEmpty: -> @suites.length is 0
@@ -24,6 +27,32 @@ class FailureTree
 
       parentSuite.specs[spec.id] ?= {spec, failures:[]}
       parentSuite.specs[spec.id].failures.push(item)
+      @filterStackTrace(item)
+
+  filterStackTrace: (failure) ->
+    stackTrace = @filterStack(failure.trace.stack)
+    return unless stackTrace
+
+    # Remove first line if it matches the failure message
+    stackTraceLines = stackTrace.split('\n')
+    [firstLine] = stackTraceLines
+    {message} = failure
+    if firstLine is message or firstLine is "Error: #{message}"
+      stackTraceLines.shift()
+
+    # Remove remaining line if it is from an anonymous function
+    if stackTraceLines.length is 1
+      [firstLine] = stackTraceLines
+      if match = /^\s*at\s+null\.<anonymous>\s+\((.*):(\d+):(\d+)\)\s*$/.exec(firstLine)
+        stackTraceLines.shift()
+        filePath = match[1]
+        relativePath = path.relative(process.cwd(), filePath)
+        filePath = relativePath if relativePath[0] isnt '.'
+        line = match[2]
+        column = match[3]
+        failure.messageLine = "#{filePath}:#{line}:#{column}"
+
+    failure.filteredStackTrace = stackTraceLines.join('\n')
 
   forEachSpec: ({spec, suites, specs, failures}={}, callback, depth=0) ->
     if failures?
