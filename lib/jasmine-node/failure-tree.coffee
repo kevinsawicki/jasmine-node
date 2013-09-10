@@ -59,11 +59,19 @@ class FailureTree
         index++
 
   filterFailureMessageLine: (failure, stackTraceLines) ->
-    # Remove first line if it matches the failure message
-    [firstLine] = stackTraceLines
+    # Remove initial line(s) when they match the failure message
+    stackTraceLines = stackTrace.split('\n')
+    errorLines = []
+    while stackTraceLines.length > 0
+      if /^\s+at\s+.*\((.*):(\d+):(\d+)\)\s*$/.test(stackTraceLines[0])
+        break
+      else
+        errorLines.push(stackTraceLines.shift())
+
+    stackTraceErrorMessage = errorLines.join('\n')
     {message} = failure
-    if firstLine is message or firstLine is "Error: #{message}"
-      stackTraceLines.shift()
+    if stackTraceErrorMessage isnt message and stackTraceErrorMessage isnt "Error: #{message}"
+      stackTraceLines.splice(0, 0, errorLines...)
 
   filterOriginLine: (failure, stackTraceLines) ->
     return stackTraceLines unless stackTraceLines.length is 1
