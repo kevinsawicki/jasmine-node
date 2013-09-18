@@ -85,7 +85,6 @@ class FailureTree
     stackTrace = failure.trace.stack
     return unless stackTrace
 
-    jasmineFilename = require.resolve('./jasmine-1.3.1')
     stackTraceLines = stackTrace.split('\n')
     @filterJasmineLines(stackTraceLines)
     @filterTrailingTimersLine(stackTraceLines)
