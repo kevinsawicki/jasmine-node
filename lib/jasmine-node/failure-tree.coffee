@@ -58,7 +58,7 @@ class FailureTree
 
   filterFailureMessageLine: (failure, stackTraceLines) ->
     # Remove initial line(s) when they match the failure message
-    stackTraceLines = stackTrace.split('\n')
+    stackTraceLines = stackTraceLines.split('\n')
     errorLines = []
     while stackTraceLines.length > 0
       if /^\s+at\s+.*\((.*):(\d+):(\d+)\)\s*$/.test(stackTraceLines[0])
