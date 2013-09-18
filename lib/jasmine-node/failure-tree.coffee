@@ -32,13 +32,11 @@ class FailureTree
       @filterStackTrace(item)
 
   filterJasmineLines: (stackTraceLines) ->
-    jasmineFilenames = [require.resolve('./jasmine-1.3.1')]
-    try
-      jasmineFilenames.push(require.resolve('jasmine'))
+    jasminePattern = /\(.*\/jasmine.js:\d+:\d+\)\s*$/
 
     index = 0
     while index < stackTraceLines.length
-      if _.some(jasmineFilenames, (jasmineFilename) -> stackTraceLines[index].indexOf(jasmineFilename) isnt -1)
+      if jasminePattern.test(stackTraceLines[index])
         stackTraceLines.splice(index, 1)
       else
         index++
