@@ -32,7 +32,7 @@ class FailureTree
       @filterStackTrace(item)
 
   filterJasmineLines: (stackTraceLines) ->
-    jasminePattern = /^\s*at\s+.*\(?.*\/jasmine.js:\d+:\d+\)?\s*$/
+    jasminePattern = /^\s*at\s+.*\(?.*\/jasmine(-.*)?\.js:\d+:\d+\)?\s*$/
 
     index = 0
     while index < stackTraceLines.length
