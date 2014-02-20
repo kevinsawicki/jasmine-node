@@ -74,11 +74,11 @@ class FailureTree
     return stackTraceLines unless stackTraceLines.length is 1
 
     # Remove remaining line if it is from an anonymous function
-    if match = /^\s*at\s+null\.<anonymous>\s+\((.*):(\d+):(\d+)\)\s*$/.exec(stackTraceLines[0])
+    if match = /^\s*at\s+((\[object Object\])|(null))\.<anonymous>\s+\((.*):(\d+):(\d+)\)\s*$/.exec(stackTraceLines[0])
       stackTraceLines.shift()
-      filePath = path.relative(process.cwd(), match[1])
-      line = match[2]
-      column = match[3]
+      filePath = path.relative(process.cwd(), match[4])
+      line = match[5]
+      column = match[6]
       failure.messageLine = "#{filePath}:#{line}:#{column}"
 
   filterStackTrace: (failure) ->
