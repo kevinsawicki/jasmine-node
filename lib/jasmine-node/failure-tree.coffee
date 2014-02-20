@@ -85,14 +85,14 @@ class FailureTree
     stackTrace = failure.trace.stack
     return unless stackTrace
 
-    stackTraceLines = stackTrace.split('\n')
+    stackTraceLines = stackTrace.split('\n').filter (line) -> line
     @filterJasmineLines(stackTraceLines)
     @filterTrailingTimersLine(stackTraceLines)
     @filterSetupLines(stackTraceLines)
     stackTrace = coffeestack.convertStackTrace(stackTraceLines.join('\n'), sourceMaps)
     return unless stackTrace
 
-    stackTraceLines = stackTrace.split('\n')
+    stackTraceLines = stackTrace.split('\n').filter (line) -> line
     @filterFailureMessageLine(failure, stackTraceLines)
     @filterOriginLine(failure, stackTraceLines)
     failure.filteredStackTrace = stackTraceLines.join('\n')
